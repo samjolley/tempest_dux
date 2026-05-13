@@ -1,6 +1,6 @@
-# TEMPEST
+# TEMPEST_DUX
 
-a 36/38-key split ergonomic keyboard
+a 36-key split ergonomic keyboard with the stagger, splay, and key placement of the rae-dux.
 
 ![Maintenance](https://img.shields.io/maintenance/yes/2025) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/thrly/tempest)
 ![Tempest](images/tempest.jpg)
@@ -8,7 +8,6 @@ a 36/38-key split ergonomic keyboard
 ## Design
 
 - Five columns, three rows, three thumb keys
-  - Optional extra key for 36 or 38-key configuration (snap-off pcb)
 - Column stagger and splay on the pinky and ring columns
 - Powered by nice!nano / pro micro microcontroller
 - Optional nice!view display
@@ -18,7 +17,7 @@ a 36/38-key split ergonomic keyboard
 - Uses some components (JST plug, power switch, reset) from the Typeractive Corne design
 - Layout designed with [Ergogen](https://ergogen.ceoloide.com/) (see [config.yaml](./ergogen/config.yaml))
 - PCB designed with [KiCad](https://www.kicad.org/) (v 9)
-- Simple 3D-printable case for both 36 and 38-key layouts
+- Simple 3D-printable case
 
 ![Tempest](images/tempest-half.jpg)
 
