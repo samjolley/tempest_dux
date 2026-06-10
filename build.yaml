@@ -1,12 +1,12 @@
 # Build matrix consumed by .github/workflows/build.yml
 # (zmkfirmware/zmk build-user-config reusable workflow).
 include:
-  - board: nice_nano_v2
+  - board: nice_nano@2.0.0//zmk
     shield: tempest_dux_left nice_view_adapter ls013b7dh05_view
     artifact-name: tempest_dux_left
-  - board: nice_nano_v2
+  - board: nice_nano@2.0.0//zmk
     shield: tempest_dux_right
     artifact-name: tempest_dux_right
-  - board: nice_nano_v2
+  - board: nice_nano@2.0.0//zmk
     shield: settings_reset
     artifact-name: settings_reset
