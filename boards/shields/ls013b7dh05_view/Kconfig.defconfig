@@ -1,0 +1,30 @@
+if SHIELD_LS013B7DH05_VIEW
+
+config ZMK_DISPLAY
+    default y
+
+if ZMK_DISPLAY
+
+# Sharp memory LCDs only accept full-width line writes; render with a full
+# frame buffer so LVGL never issues partial-line flushes the LS0XX driver
+# cannot handle.
+config LV_Z_VDB_SIZE
+    default 100
+
+config LV_Z_BITS_PER_PIXEL
+    default 1
+
+choice LV_COLOR_DEPTH
+    default LV_COLOR_DEPTH_1
+endchoice
+
+config LV_DPI_DEF
+    default 170
+
+choice ZMK_DISPLAY_WORK_QUEUE
+    default ZMK_DISPLAY_WORK_QUEUE_DEDICATED
+endchoice
+
+endif # ZMK_DISPLAY
+
+endif # SHIELD_LS013B7DH05_VIEW

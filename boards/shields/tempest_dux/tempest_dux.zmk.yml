@@ -1,0 +1,13 @@
+file_format: "1"
+id: tempest_dux
+name: Tempest Dux
+type: shield
+url: https://github.com/samjolley/tempest_dux
+requires: [pro_micro]
+features:
+  - keys
+  - pointer
+  - display
+siblings:
+  - tempest_dux_left
+  - tempest_dux_right

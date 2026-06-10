@@ -1,0 +1,18 @@
+if SHIELD_TEMPEST_DUX_LEFT
+
+config ZMK_KEYBOARD_NAME
+    default "Tempest Dux"
+
+# Left = central (display side). The right half's trackball is forwarded
+# here via zmk,input-split.
+config ZMK_SPLIT_BLE_ROLE_CENTRAL
+    default y
+
+endif
+
+if SHIELD_TEMPEST_DUX_LEFT || SHIELD_TEMPEST_DUX_RIGHT
+
+config ZMK_SPLIT
+    default y
+
+endif

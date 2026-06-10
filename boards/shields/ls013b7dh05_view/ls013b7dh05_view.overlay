@@ -1,0 +1,25 @@
+/*
+ * LS013B7DH05 (144x168 Sharp Memory LCD) mounted on a nice!view breakout.
+ * Compose after nice_view_adapter, which provides &nice_view_spi (spi0 on
+ * pro_micro pins: CS P0.06, MOSI P0.17, SCK P0.20) with the CS already
+ * configured active-high for Sharp panels:
+ *   SHIELD="tempest_dux_left nice_view_adapter ls013b7dh05_view"
+ */
+
+&nice_view_spi {
+    status = "okay";
+
+    ls013b7dh05: ls0xx@0 {
+        compatible = "sharp,ls0xx";
+        spi-max-frequency = <1000000>;
+        reg = <0>;
+        width = <144>;
+        height = <168>;
+    };
+};
+
+/ {
+    chosen {
+        zephyr,display = &ls013b7dh05;
+    };
+};

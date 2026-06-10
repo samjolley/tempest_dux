@@ -1,31 +1,15 @@
 /*
- * Tempest_Dux Right Half Overlay
+ * Tempest Dux right half = peripheral.
  */
 
 #include "tempest_dux.dtsi"
 
-&trackball_split {
-    device = <&trackball>;
-};
-
-&kscan0 {
-    row-gpios
-        = <&gpio0 31 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-        , <&gpio0 29 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-        , <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-        , <&gpio1 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-        ;
-
-    col-gpios
-        = <&gpio0 22 GPIO_ACTIVE_HIGH>
-        , <&gpio0 24 GPIO_ACTIVE_HIGH>
-        , <&gpio1 0 GPIO_ACTIVE_HIGH>
-        , <&gpio0 11 GPIO_ACTIVE_HIGH>
-        , <&gpio0 10 GPIO_ACTIVE_HIGH>
-        ;
-};
-
-// Mirroring columns for the right side matrix
+// Shift this half's columns into the 5-9 block of the transform.
 &default_transform {
     col-offset = <5>;
+};
+
+// Forward the local trackball to the central over the split link.
+&trackball_split {
+    device = <&trackball>;
 };

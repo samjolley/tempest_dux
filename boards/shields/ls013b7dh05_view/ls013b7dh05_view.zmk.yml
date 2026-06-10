@@ -1,0 +1,8 @@
+file_format: "1"
+id: ls013b7dh05_view
+name: LS013B7DH05 on nice!view breakout
+type: shield
+url: https://github.com/samjolley/tempest_dux
+requires: [pro_micro]
+features:
+  - display
