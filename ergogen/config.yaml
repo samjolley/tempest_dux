@@ -1,93 +1,222 @@
-# Ergogen congig file for TEMPEST keyboard
-
-# TEMPEST, by oliver thurley - @thrly
-# https://github.com/thrly/tempest
-# v1 - spring 2025
-# v2 - summer 2025
-
-# invaluable ergogen help from https://flatfootfox.com/ergogen-part1-units-points/
-
-# NOTE: the mcu and display footprint files have been edited to alter drill size to 0.85mm. Build from the footprints on the github repo, not ergogen's web client.
-
+# ===============================================================================
+# TEMPEST_DUX - wireless split ergonomic keyboard with integrated PMW3610 trackball
+# -------------------------------------------------------------------------------
+# Lineage : rae-dux / track-dux column geometry (validated on Sam's daily driver)
+# Stack   : ergogen v4.2.1 -> KiCad 8 -> JLCPCB ;  ZMK on nRF52840 (nice!nano v2)
+# Repo    : https://github.com/samjolley/tempest_dux
+#
+# -- v0.7.x ARCHITECTURE: two dedicated single-sided boards (NOT reversible) -----
+# The old reversible board (one gerber, flipped, peripherals DNP per side) is gone.
+# v0.7 splits into two distinct single-sided gerbers generated from ONE points
+# tree via an ergogen global mirror:
+#
+#     SOURCE hand (unprefixed pts: matrix_*, thumb_*) = LEFT  half = DISPLAY
+#     MIRROR hand (mirror_* pts)                       = RIGHT half = TRACKBALL
+#
+# Handedness is verified, not assumed: in the source hand the pinky is leftmost and
+# the inner column rightmost => that is the LEFT hand. The mirror is therefore the
+# RIGHT hand, which carries the trackball. Do not swap these.
+#
+# -- MIRROR MECHANISM (read before editing geometry) ----------------------------
+#   points.mirror: {ref: matrix_inner_home, distance: 160}  -> emits mirror_* pts.
+#   ergogen does the reflection (x flipped, rotation negated), so there is NO manual
+#   KiCad mirror step. The reflection is exact, incl. the asymmetric thumb cluster.
+#
+#   Hand isolation uses POSITIVE name regex on `where`:
+#       source/left  : where: /^(matrix_|thumb_).*/
+#       mirror/right : where: /^mirror_(matrix_|thumb_).*/
+#   WARNING: do NOT use a negative lookahead like /^(?!mirror)/ - ergogen does not
+#   honor it; it silently matches BOTH hands and the board spans both halves.
+#   Single-point footprints use the matching ref prefix: left = matrix_inner_home,
+#   right = mirror_matrix_inner_home, etc.
+#
+# -- ELECTRONICS / PINOUT (one ZMK keymap serves both halves) --------------------
+#   Matrix rows : P4 P5 P6 P7          (identical both boards)
+#   Matrix cols : P14 P15 P18 P19 P20  (identical both boards)
+#   Display SPI : P1=CS  P2=MOSI P3=SCK                  -> LEFT board only
+#   PMW3610 SPI : P10=CS P9=SCLK P8=SDIO P21=MOTION (3-wire) -> RIGHT board only
+#   elec_* units (top of `units`) tune shared X/Y placement; elec_switch_right_x
+#   adds a +1.4mm X nudge for the rotated SMD side power switch on the RIGHT only.
+#
+# -- OUTLINES & PLATES -----------------------------------------------------------
+#   Source outlines (display_board_outline, keyboard_body, left_bottom_plate_outline)
+#     = LEFT board (no trackball lobe).
+#   right_* outlines (right_trackball_board_outline, right_bottom_plate_outline)
+#     = RIGHT board (trackball lobe + cleanout).
+#   Switch/top/TPU/back plates are built from the SOURCE (left) hand and are
+#   symmetric - mirror them in the slicer for the right half. Bottom plates are
+#   per-hand; only the right one has the trackball cleanout.
+#
+# -- PRE-ORDER CHECKLIST (custom footprints + DRC are not checkable from YAML) ----
+#   [ ] 1:1 paper print BOTH halves; confirm key + trackball + thumb fit.
+#   [ ] KiCad: switches/diodes/hotswap all on the same physical side (B.Cu) on BOTH
+#       boards - confirm the mirror did not flip any footprint to F.Cu.
+#   [ ] Confirm reverse_mount:true on the MCU is intended; check USB-C direction.
+#   [ ] Verify right power switch (rotate 180 + elec_switch_right_x) position.
+#   [ ] Custom footprints resolve: pmw3610_badjeff_socket, keyball_trackball_case_34mm,
+#       TentingPuck, choc_hotswap_plate_cutout, smd_plate_cutout.
+#   [ ] DRC clean on both boards (vias at 0.6/0.3mm sit at min annular ring).
+#
+# -- CHANGELOG -------------------------------------------------------------------
+#   v0.7.5 : silk ver -> v0.7.5; branding text consolidated to side F; right reset
+#            offset corrected (THT uses elec_switch_x, not SMD elec_switch_right_x).
+#   v0.7.4 : ergogen global mirror; positive-regex hand isolation; handedness fixed
+#            (trackball on mirror/right hand, display on source/left hand).
+#   v0.7.0 : split reversible board into two single-sided boards; dropped reversible
+#            footprints, MCU jumper field, and redundant vertical display.
+# ===============================================================================
 meta:
-  engine: 4.1.0
-  version: 2.0
-  author: oliver thurley
-  url: https://github.com/thrly/tempest
-
+  engine: 4.2.1
+  version: 0.7.5
+  author: sam jolley
+  url: https://github.com/samjolley/tempest_dux
 units:
-  # Proxy Spacing Variables
-  kx: cx #choc spaced
+  kx: cx
   ky: cy
-  # Padding Variables
-  px: kx + 2
-  py: ky + 2
-
-  # vertical offset of mcu area items
+  px: kx + 4
+  py: ky + 4
   voff: 7
-
-  # pinky splay angles
-  spang: 8
-  pinksprd: 0.5
-
-  standoff_size: 5 #size for standoff holes on pcb
-  screen_standoff_size: 2
-
-  hole1_x: -0.5 kx - 1
-  hole1_y: -0.5 ky + 0.5
-
-  hole2_x: -0.52 kx
-  hole2_y: -0.35 ky
-
-  hole3_x: 0.5 kx + 1
-  hole3_y: 0. ky - 0.5
-
-  hole4_x: 0.5 kx - 5
-  hole4_y: -0.5 ky - 2.1
-
-  hole5_x: -0.5 kx - 0.6
-  hole5_y: -0.6 ky + 1.5
-
-  wall_thickness: 1.2 # account for the thickness in 3D printed case/plate
-  print_fit_tolerance: 0.2 # give the case some overlap beyond pcb
-
-  # display correct choc sizing
+  mcu_offset: 6
+  mcu_right_pad: 6
+  # Shared electronics placement controls for v0.7.x asymmetric halves.
+  # Left footprints use source anchors; right footprints use mirror_* anchors.
+  # Adjust these values once, then regenerate both halves.
+  elec_main_x: 19.8 + mcu_offset
+  elec_mcu_y: 17 - voff
+  elec_display_y: 13 - voff
+  elec_battery_y: 35 - voff
+  elec_switch_x: 36.6 + mcu_offset
+  # Right power/reset footprint origin needs a small X compensation because the side-switch footprint is rotated.
+  elec_switch_right_x: elec_switch_x + 1.4
+  elec_power_y: -25 - voff
+  elec_reset_y: -37 - voff
+  elec_bay_x: 19.5 + mcu_offset + 2.5
+  elec_bay_y: -19.655 - voff
+  board_fillet: 1.8
+  standoff_size: 2
+  hole1_x: 0.62 kx
+  hole1_y: 0.2 ky
+  hole2_x: 0.53 kx
+  hole2_y: 0.62 ky
+  hole3_x: 0.57 kx
+  hole3_y: 0 ky
+  hole4_x: 0.53 kx
+  hole4_y: -0.4 ky
+  hole5_x: -0.58 kx - 1.1
+  hole5_y: 0.4 ky - 1.7
+  hole6_x: -0.525 kx
+  hole6_y: -1.525 ky
+  hole7_x: 1.568 kx
+  hole7_y: -1.5 ky
+  wall_thickness: 1.2
+  print_fit_tolerance: 0.2
   $default_width: 18
   $default_height: 17
-
+  pmw_x: -39.6
+  pmw_y: -1.5 ky
+  pmw_rotate: 95
+  pmw_optical_x: pmw_x - 1
+  pmw_optical_y: pmw_y - 2
+  pmw_board_w: 15.5
+  pmw_board_h: 30.0
+  pmw_ball_cutout_d: 13
+  pmw_socket_pad_dia: 1.8
+  pmw_socket_drill: 1.0
+  pmw_bridge_dx: -19
+  pmw_bridge_dy: 3.6
+  pmw_bridge_w: 26
+  pmw_bridge_h: 15.09
+  tb_case_slot_w: 18.4
+  tb_case_slot_l: 30.0
+  tb_case_body_w: 35.0
+  tb_case_body_l: 45
+  tb_cleanout_d: 12
+  tb_cleanout_r: tb_cleanout_d / 2
+  tb_screw_drill: 1.6
+  tb_screw_ox: 1.51
+  tb_screw_oy: 7.98
 points:
   zones:
     matrix:
-      anchor.shift: [50, -100] # Fix KiCad placement
+      anchor.shift:
+      - 50
+      - -100
       key:
-        padding: 1ky # is this extra spacing necessary or will 1 allow spacing for keycaps?
+        padding: 1ky
         spread: 1kx
       columns:
-        extra: # additional outer key, inspired by TOTEM
-          rows.bottom.skip: true
-          rows.top.skip: true
-          key.splay: spang
-          key.column_net: col_extra
         pinky:
-          key.stagger: 0.3ky
-          # key.splay: spang # comment this line out if using the 'extra' key above
-          key.column_net: col_pinky
+          key:
+            spread: 18
+            splay: 17
+            origin:
+            - 0
+            - -ky
+            bind:
+            - 0 kx
+            - 0 kx
+            - 0.1 kx
+            - 0 kx
+            column_net: col_pinky
         ring:
-          key.stagger: 0.35ky
-          key.splay: -spang/2
-          key.spread: 1kx + pinksprd # avoid collision on splayed col?
-          key.column_net: col_ring
+          key:
+            spread: 18
+            stagger: ky
+            splay: -7
+            origin:
+            - 0
+            - -ky
+            bind:
+            - 0 kx
+            - 0.1 kx
+            - 0.05 ky
+            - 0.08 kx
+            column_net: col_ring
         middle:
-          key.stagger: 0.25ky
-          key.splay: -spang/2
-          key.spread: 1kx + pinksprd # avoid collision on splayed col?
-          key.column_net: col_middle
+          key:
+            spread: 18
+            stagger: ky/3
+            splay: -5
+            origin:
+            - 0
+            - -ky
+            bind:
+            - 0 kx
+            - 0.1 kx
+            - 0.05 kx
+            - 0.1 kx
+            adjust:
+              shift:
+              - 0.2
+              - 0
+            column_net: col_middle
         index:
-          key.stagger: -0.2ky
-          key.column_net: col_index
+          key:
+            spread: 18
+            stagger: -ky/3
+            splay: -5
+            origin:
+            - 0
+            - -ky
+            bind:
+            - 0 kx
+            - -0.1 kx
+            - 0.05 kx
+            - 0 kx
+            column_net: col_index
         inner:
-          key.stagger: -0.15ky
-          key.column_net: col_inner
+          key:
+            spread: 19
+            stagger: -ky/6
+            origin:
+            - 0
+            - -ky
+            bind:
+            - 0.158 kx
+            - 0.05 kx
+            - 0.1 kx
+            - 0.1 kx
+            column_net: col_inner
       rows:
         bottom:
           row_net: row_bottom
@@ -95,159 +224,548 @@ points:
           row_net: row_home
         top:
           row_net: row_top
-
     thumb:
+      anchor:
+        ref: matrix_inner_bottom
+        shift:
+        - -0.10 kx
+        - -1.0 ky
       key:
         padding: 1ky
         spread: 1kx
-      anchor:
-        ref: matrix_index_bottom
-        shift: [0.4kx, -1.25ky] # this is slightly reduced in v2 from 0.5kx
       columns:
         near:
-          key.name: thumb_near
-          key.column_net: col_middle
+          key:
+            spread: kx
+            splay: -15
+            origin:
+            - -1.5 kx
+            - -0.5 ky
+            name: thumb_near
+            column_net: col_middle
         mid:
-          key.splay: -15
-          key.origin: [-0.5kx, -0.5ky]
-          key.name: thumb_mid
-          key.column_net: col_index
+          key:
+            spread: kx
+            splay: -15
+            origin:
+            - -0.5 kx
+            - -0.5 ky
+            name: thumb_mid
+            column_net: col_index
         far:
-          key.splay: -15
-          key.origin: [-0.5kx, -0.5ky]
-          key.name: thumb_far
-          key.column_net: col_inner
-          # # for 1.5 thumb key
-          # key.width: 1.5kx
-          # key.rotate: 90
+          key:
+            spread: kx
+            splay: -15
+            origin:
+            - -0.5 kx
+            - -0.5 ky
+            name: thumb_far
+            column_net: col_inner
       rows:
         thumb-cluster:
           row_net: row_thumb
-
+  # Global mirror -> emits mirror_* points (RIGHT hand). See header for the full
+  # mechanism. Hand isolation: source=/^(matrix_|thumb_).*/, mirror=/^mirror_(matrix_|thumb_).*/.
+  # Never filter with a negative lookahead (/^(?!mirror)/) - ergogen ignores it.
+  mirror:
+    ref: matrix_inner_home
+    distance: 160
 outlines:
-  # just the keys
   raw:
-    - what: rectangle
-      where: true
-      size: [px, py]
-
-  # keys without padding
+  - what: rectangle
+    where: /^(matrix_|thumb_).*/
+    size:
+    - px
+    - py
   keys:
-    - what: rectangle
-      where: true
-      size: [kx-0.5, ky-0.5]
-
-  # keys without padding
+  - what: rectangle
+    where: /^(matrix_|thumb_).*/
+    size:
+    - kx-0.5
+    - ky-0.5
   key-plug:
-    - what: rectangle
-      where: true
-      size: [13.8, 13.8]
-
+  - what: rectangle
+    where: /^(matrix_|thumb_).*/
+    size:
+    - 13.8
+    - 13.8
+  key-plug-fdm:
+  - what: rectangle
+    where: /^(matrix_|thumb_).*/
+    size:
+    - 13.82
+    - 13.62
+  - what: circle
+    where: /^(matrix_|thumb_).*/
+    radius: 0.45
+    adjust:
+      shift:
+      - 6.975
+      - 6.975
+  - what: circle
+    where: /^(matrix_|thumb_).*/
+    radius: 0.45
+    adjust:
+      shift:
+      - -6.975
+      - 6.975
+  - what: circle
+    where: /^(matrix_|thumb_).*/
+    radius: 0.45
+    adjust:
+      shift:
+      - 6.975
+      - -6.975
+  - what: circle
+    where: /^(matrix_|thumb_).*/
+    radius: 0.45
+    adjust:
+      shift:
+      - -6.975
+      - -6.975
+  key-plug-loose:
+  - what: rectangle
+    where: /^(matrix_|thumb_).*/
+    size:
+    - 14.25
+    - 14.25
+  column_gap_bound:
+  - what: rectangle
+    where: /^matrix_(pinky|ring|middle|index|inner)_(top|home|bottom)$/
+    size:
+    - px
+    - py
+    bound: true
+  pmw_breakout_preview:
+  - what: rectangle
+    where:
+      ref: matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+      rotate: pmw_rotate
+    size:
+    - pmw_board_w
+    - pmw_board_h
+    corner: 1
+  pmw_socket_pcb_area:
+  - what: rectangle
+    where:
+      ref: matrix_inner_bottom
+      shift:
+      - pmw_optical_x + pmw_bridge_dx
+      - pmw_optical_y + pmw_bridge_dy
+      rotate: pmw_rotate
+    size:
+    - pmw_bridge_w
+    - pmw_bridge_h
+    corner: 1
+  pmw_ball_cutout:
+  - what: circle
+    where:
+      ref: matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+    radius: pmw_ball_cutout_d / 2
+  trackball_cleanout_hole:
+  - what: circle
+    where:
+      ref: matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+      rotate: pmw_rotate
+    radius: tb_cleanout_r
+  trackball_slot_opening:
+  - what: rectangle
+    where:
+      ref: matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+      rotate: pmw_rotate
+    size:
+    - tb_case_slot_w
+    - tb_case_slot_l
+    corner: 1
+  trackball_case_body:
+  - what: rectangle
+    where:
+      ref: matrix_inner_bottom
+      shift:
+      - pmw_optical_x + 4
+      - pmw_optical_y + 5
+      rotate: pmw_rotate
+    size:
+    - tb_case_body_w
+    - tb_case_body_l
+    corner: 2
   mcu:
-    - what: rectangle
-      where:
-        - ref: matrix_inner_top
-          shift: [19.5, -20 - voff] # v2 - Creates more space between inner key col and mcu (issue #4)
-      size: [22, 62]
-
-  # draw thumb cluster outline
+  - what: rectangle
+    where:
+      ref: matrix_inner_top
+      shift:
+      - elec_bay_x
+      - elec_bay_y
+    size:
+    - 33
+    - 80
+  power_cutout:
+  - what: rectangle
+    where:
+      ref: matrix_inner_home
+      shift:
+      - elec_switch_x
+      - elec_power_y
+      rotate: 0
+    size:
+    - 9.5
+    - 6.5
+  reset_cutout:
+  - what: rectangle
+    where:
+      ref: matrix_inner_home
+      shift:
+      - elec_switch_x
+      - elec_reset_y
+      rotate: 90
+    size:
+    - 8.5
+    - 4.5
   thumb_outline:
-    - what: polygon
-      operation: stack
-      # bound: true
-      points:
-        - ref: thumb_near
-          shift: [-0.5px, 0.75py]
-        - ref: matrix_inner_bottom
-          shift: [0.45px, -0.5py]
-
-        - ref: thumb_far
-          shift: [-0.5px, 0.5py]
-        - ref: thumb_far
-          shift: [0.5px, 0.5py]
-        - ref: thumb_far
-          shift: [0.5px, -0.5py]
-        - ref: thumb_far
-          shift: [-0.5px, -0.5075py]
-
-        - ref: thumb_near
-          shift: [0.5px, -0.5py]
-        - ref: thumb_near
-          shift: [-0.5px, -0.5py]
-
-  # combine keys with thumb cluster
-  key_section: [raw, thumb_outline]
-  key_thumb_mcu: [key_section, mcu]
-
-  top_plate_cutouts: [key-plug] #, mcu_key_shave]
-
-  top_plate:
-    - name: key_section
-      # expand: print_fit_tolerance + wall_thickness
-    - operation: subtract
-      name: top_plate_cutouts
-      fillet: 1
-
+  - what: polygon
+    operation: stack
+    points:
+    - ref: thumb_near
+      shift:
+      - -0.7px
+      - 0.5py
+    - ref: matrix_inner_bottom
+      shift:
+      - 0.15px
+      - -0.08py
+    - ref: thumb_far
+      shift:
+      - -0.5px
+      - 0.5py
+    - ref: thumb_far
+      shift:
+      - 0.51px
+      - 0.51py
+    - ref: thumb_far
+      shift:
+      - 0.5px
+      - -0.5py
+    - ref: thumb_far
+      shift:
+      - -0.5px
+      - -0.5075py
+    - ref: thumb_near
+      shift:
+      - 0.5px
+      - -0.5py
+    - ref: thumb_near
+      shift:
+      - -0.5px
+      - -0.5py
+  key_section:
+  - name: raw
+  - operation: add
+    name: column_gap_bound
+  - operation: add
+    name: thumb_outline
+  key_thumb_mcu:
+  - name: key_section
+  - operation: add
+    name: mcu
+  keyboard_body:
+  - name: key_thumb_mcu
+    expand: 0.2
+    fillet: board_fillet
+  display_board_outline:
+  - name: keyboard_body
+  trackball_board_outline:
+  - name: keyboard_body
+  - operation: add
+    name: pmw_socket_pcb_area
+    fillet: board_fillet
+  - operation: add
+    name: trackball_case_body
+    expand: wall_thickness + print_fit_tolerance
+    fillet: board_fillet
+  right_raw:
+  - what: rectangle
+    where: /^mirror_(matrix_|thumb_).*/
+    size:
+    - px
+    - py
+  right_keys:
+  - what: rectangle
+    where: /^mirror_(matrix_|thumb_).*/
+    size:
+    - kx-0.5
+    - ky-0.5
+  right_column_gap_bound:
+  - what: rectangle
+    where: /^mirror_matrix_(pinky|ring|middle|index|inner)_(top|home|bottom)$/
+    size:
+    - px
+    - py
+    bound: true
+  right_thumb_outline:
+  - what: polygon
+    operation: stack
+    points:
+    - ref: mirror_thumb_near
+      shift:
+      - -0.7px
+      - 0.5py
+    - ref: mirror_matrix_inner_bottom
+      shift:
+      - 0.15px
+      - -0.08py
+    - ref: mirror_thumb_far
+      shift:
+      - -0.5px
+      - 0.5py
+    - ref: mirror_thumb_far
+      shift:
+      - 0.51px
+      - 0.51py
+    - ref: mirror_thumb_far
+      shift:
+      - 0.5px
+      - -0.5py
+    - ref: mirror_thumb_far
+      shift:
+      - -0.5px
+      - -0.5075py
+    - ref: mirror_thumb_near
+      shift:
+      - 0.5px
+      - -0.5py
+    - ref: mirror_thumb_near
+      shift:
+      - -0.5px
+      - -0.5py
+  right_pmw_breakout_preview:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+      rotate: pmw_rotate
+    size:
+    - pmw_board_w
+    - pmw_board_h
+    corner: 1
+  right_pmw_socket_pcb_area:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_bottom
+      shift:
+      - pmw_optical_x + pmw_bridge_dx
+      - pmw_optical_y + pmw_bridge_dy
+      rotate: pmw_rotate
+    size:
+    - pmw_bridge_w
+    - pmw_bridge_h
+    corner: 1
+  right_pmw_ball_cutout:
+  - what: circle
+    where:
+      ref: mirror_matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+    radius: pmw_ball_cutout_d / 2
+  right_trackball_cleanout_hole:
+  - what: circle
+    where:
+      ref: mirror_matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+      rotate: pmw_rotate
+    radius: tb_cleanout_r
+  right_trackball_slot_opening:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_bottom
+      shift:
+      - pmw_optical_x
+      - pmw_optical_y
+      rotate: pmw_rotate
+    size:
+    - tb_case_slot_w
+    - tb_case_slot_l
+    corner: 1
+  right_trackball_case_body:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_bottom
+      shift:
+      - pmw_optical_x + 4
+      - pmw_optical_y + 5
+      rotate: pmw_rotate
+    size:
+    - tb_case_body_w
+    - tb_case_body_l
+    corner: 2
+  right_mcu:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_top
+      shift:
+      - elec_bay_x
+      - elec_bay_y
+    size:
+    - '33'
+    - '80'
+  right_power_cutout:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_home
+      shift:
+      - elec_switch_x
+      - elec_power_y
+      rotate: 0
+    size:
+    - '9.5'
+    - '6.5'
+  right_reset_cutout:
+  - what: rectangle
+    where:
+      ref: mirror_matrix_inner_home
+      shift:
+      - elec_switch_x
+      - elec_reset_y
+      rotate: 90
+    size:
+    - '8.5'
+    - '4.5'
+  right_key_section:
+  - name: right_raw
+  - operation: add
+    name: right_column_gap_bound
+  - operation: add
+    name: right_thumb_outline
+  right_key_thumb_mcu:
+  - name: right_key_section
+  - operation: add
+    name: right_mcu
+  right_keyboard_body:
+  - name: right_key_thumb_mcu
+    expand: 0.2
+    fillet: board_fillet
+  right_trackball_board_outline:
+  - name: right_keyboard_body
+  - operation: add
+    name: right_pmw_socket_pcb_area
+    fillet: board_fillet
+  - operation: add
+    name: right_trackball_case_body
+    expand: wall_thickness + print_fit_tolerance
+    fillet: board_fillet
   board_outline:
-    - name: key_thumb_mcu
-      expand: 0.1 # padding on outer edge or board
-      fillet: 1
-
+  - name: right_trackball_board_outline
+  switch_plate_cutouts:
+  - key-plug-fdm
+  switch_plate_cutouts_loose:
+  - key-plug-loose
+  switch_plate:
+  - name: key_section
+    expand: 0.2
+  - operation: subtract
+    name: switch_plate_cutouts
+    fillet: board_fillet
+  tpu_gasket_outline:
+  - name: key_section
+    expand: 0.2
+  - operation: subtract
+    name: switch_plate_cutouts_loose
+    fillet: board_fillet
+  top_plate:
+  - name: key_section
+    expand: 0.2
+  - operation: subtract
+    name: switch_plate_cutouts_loose
+    fillet: board_fillet
   back_plate:
-    - name: board_outline
-      expand: wall_thickness + print_fit_tolerance
-      fillet: 1
-
-  # Combination preview showing outline and keys.
+  - name: key_section
+    expand: wall_thickness + print_fit_tolerance
+  - operation: subtract
+    name: switch_plate_cutouts_loose
+    fillet: board_fillet
+  left_bottom_plate_outline:
+  - name: display_board_outline
+    fillet: board_fillet
+  - operation: subtract
+    name: power_cutout
+  - operation: subtract
+    name: reset_cutout
+  right_bottom_plate_outline:
+  - name: right_trackball_board_outline
+    fillet: board_fillet
+  - operation: subtract
+    name: right_trackball_cleanout_hole
+  - operation: subtract
+    name: right_power_cutout
+  - operation: subtract
+    name: right_reset_cutout
+  bottom_plate_outline:
+  - name: right_bottom_plate_outline
   all_key_outline:
-    - name: board_outline
-    - operation: subtract
-      name: keys
-
+  - name: board_outline
+  - operation: subtract
+    name: keys
 pcbs:
-  tempest-pcb:
+  tempest_dux-left:
     template: kicad8
     outlines:
       main:
-        outline: board_outline
+        outline: display_board_outline
     footprints:
       choc_hotswap:
         what: ceoloide/switch_choc_v1_v2
-        where: true
+        where: /^(matrix_|thumb_).*/
         params:
-          from: "{{colrow}}"
-          to: "{{column_net}}"
+          from: '{{colrow}}'
+          to: '{{column_net}}'
           include_corner_marks: true
           include_keycap: true
           keycap_height: 16.5
           keycap_width: 17.5
-          reversible: true
+          reversible: false
           hotswap: true
           choc_v2_support: false
-
+          side: B
       diode:
         what: ceoloide/diode_tht_sod123
-        where: true
-        params:
-          from: "{{colrow}}"
-          to: "{{row_net}}"
-          include_tht: false
-          reversible: true
+        where: /^(matrix_|thumb_).*/
         adjust:
-          # rotate: -90
-          # shift: [8.25,4.2]
-          shift: [0, -5]
-          # resist: true
-
+          shift:
+          - 0
+          - -5
+        params:
+          from: '{{colrow}}'
+          to: '{{row_net}}'
+          include_tht: false
+          reversible: false
+          side: B
       mcu:
         what: ceoloide/mcu_nice_nano
         where:
-          - ref: matrix_inner_home
-            shift: [19.8, 10.8 - voff] # v2 - creates more space between mcu and key colums (issue #5) : v1:18.8
+        - ref: matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_mcu_y
         params:
-          reversible: true
+          reversible: false
           reverse_mount: true
-          show_silk_labels: false
+          show_silk_labels: true
           P4: row_top
           P5: row_home
           P6: row_bottom
@@ -257,177 +775,458 @@ pcbs:
           P18: col_middle
           P19: col_ring
           P20: col_pinky
-          P21: col_extra
-          P8: MOSI
-          P9: SCK
-          P10: CS
-          # TODO: these pins are all fucked up: reorganise them, use defaults for nice!view
-
-      # v2 - fixes display alignment and corrects connection with mcu... hopefully (fixes issues #6 and #7)
+          P1: CS
+          P2: MOSI
+          P3: SCK
       display:
         what: ceoloide/display_nice_view
-        params:
-          reversible: true
-          include_labels: false
         where:
-          - ref: matrix_inner_home
-            shift: [19.8, 7.5 - voff] # v1 = 18.8
-
-      battery:
-        what: ceoloide/battery_connector_jst_ph_2
+        - ref: matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_display_y
+          rotate: 0
         params:
-          reversible: true
+          reversible: false
+          include_labels: true
+          MOSI: MOSI
+          SCK: SCK
+          CS: CS
+      battery_direct:
+        what: ceoloide/battery_direct_solder_reversible
         where:
-          - ref: matrix_inner_home
-            shift: [23.5, -14.5 - voff]
-            rotate: -90
-
+        - ref: matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_battery_y
+          rotate: 0
+        params:
+          reversible: false
+          BAT_P: BAT_P
+          BAT_N: GND
       power:
         what: ceoloide/power_switch_smd_side
-        params:
-          reversible: true
         where:
-          - ref: matrix_inner_home
-            shift: [27.9, -18.5 - voff]
-            rotate: 0
-
+        - ref: matrix_inner_home
+          shift:
+          - elec_switch_x
+          - elec_power_y
+          rotate: 0
+        params:
+          reversible: false
+          from: BAT_P
+          to: RAW
       reset:
-        what: ceoloide/reset_switch_smd_side
-        params:
-          reversible: true
+        what: ceoloide/reset_switch_tht_top
         where:
-          - ref: matrix_inner_home
-            shift: [28.3, -10.2 - voff]
-            rotate: -90
-
-      tempest:
+        - ref: matrix_inner_home
+          shift:
+          - elec_switch_x
+          - elec_reset_y
+          rotate: 90
+        params:
+          reversible: false
+      tempest_text:
         what: ceoloide/utility_text
         where:
-          - ref: matrix_index_home
-            shift: [0, -0.5ky +1.45]
+        - ref: matrix_index_home
+          shift:
+          - 0
+          - -0.5ky + 1.45
         params:
-          text: "TEMPEST"
+          text: TEMPEST_DUX L
+          side: F
           height: 2
           width: 2
           knockout: true
-          reversible: true
-
+          reversible: false
       ver:
         what: ceoloide/utility_text
         where:
-          - ref: matrix_index_home
-            shift: [0.5kx, -0.5ky +1.45]
+        - ref: matrix_index_home
+          shift:
+          - 0.5kx
+          - -0.5ky + 1.45
         params:
-          text: "v 2"
-          reversible: true
-
-      thrly:
+          text: v0.7.5
+          side: F
+          reversible: false
+      sam:
         what: ceoloide/utility_text
         where:
-          - ref: thumb_far
-            shift: [0, -3]
-            # rotate: 30
+        - ref: thumb_far
+          shift:
+          - 0
+          - -3
         params:
-          text: "by thrly"
-          side: "B"
-          reversible: true
-
+          text: by sam
+          side: F
+          reversible: false
+      asm_display:
+        what: ceoloide/utility_text
+        where:
+        - ref: matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_display_y
+          rotate: 0
+        params:
+          text: DISPLAY LEFT
+          side: F
+          reversible: false
+          height: 1.2
+          width: 1.2
+      TentingPuck:
+        what: TentingPuck
+        where:
+        - ref: matrix_middle_home
+          shift:
+          - 0.55 kx
+          - -0.41 ky
+          rotate: -10
       hole_1:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_middle_top
-            shift: [hole1_x, hole1_y]
-
+        - ref: matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
         params:
           hole_size: standoff_size
           hole_drill: standoff_size
       hole_2:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_inner_top
-            shift: [hole2_x, hole2_y]
+        - ref: matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
         params:
           hole_size: standoff_size
           hole_drill: standoff_size
       hole_3:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: thumb_mid
-            shift: [hole3_x, hole3_y]
+        - ref: thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
         params:
           hole_size: standoff_size
           hole_drill: standoff_size
       hole_4:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_index_bottom
-            shift: [hole4_x, hole4_y]
+        - ref: matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
         params:
           hole_size: standoff_size
           hole_drill: standoff_size
       hole_5:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_ring_home
-            shift: [hole5_x, hole5_y]
+        - ref: matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
         params:
           hole_size: standoff_size
           hole_drill: standoff_size
-
-      ### mcu cover holes - v2 moves these
-      hole_screen_L:
+      hole_6:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_inner_bottom
-            shift: [0.5 kx + 4 + 0, -0.5 ky - 0]
+        - ref: matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
         params:
-          hole_size: screen_standoff_size
-          hole_drill: screen_standoff_size
-      hole_screen_R:
+          hole_size: standoff_size
+          hole_drill: standoff_size
+      hole_7:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_inner_bottom
-            shift: [0.5 kx + 4 + 14, -0.5 ky - 6.5 - 0]
+        - ref: matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
         params:
-          hole_size: screen_standoff_size
-          hole_drill: screen_standoff_size
-
-  ## these are not used in v.1.1, but they might be useful down the road for better case building, or fabricating FR4 plates
-  ##### BACKPLATE PCB
-  tempest-back-plate:
+          hole_size: standoff_size
+          hole_drill: standoff_size
+  tempest_dux-right:
     template: kicad8
     outlines:
       main:
-        outline: back_plate
+        outline: right_trackball_board_outline
+      pmw_preview:
+        outline: right_pmw_breakout_preview
+        layer: Cmts.User
+      tb_slot_preview:
+        outline: right_trackball_slot_opening
+        layer: Cmts.User
+      tb_cleanout_preview:
+        outline: right_trackball_cleanout_hole
+        layer: Dwgs.User
     footprints:
+      choc_hotswap:
+        what: ceoloide/switch_choc_v1_v2
+        where: /^mirror_(matrix_|thumb_).*/
+        params:
+          from: '{{colrow}}'
+          to: '{{column_net}}'
+          include_corner_marks: true
+          include_keycap: true
+          keycap_height: 16.5
+          keycap_width: 17.5
+          reversible: false
+          hotswap: true
+          choc_v2_support: false
+          side: B
+      diode:
+        what: ceoloide/diode_tht_sod123
+        where: /^mirror_(matrix_|thumb_).*/
+        adjust:
+          shift:
+          - 0
+          - -5
+        params:
+          from: '{{colrow}}'
+          to: '{{row_net}}'
+          include_tht: false
+          reversible: false
+          side: B
+      mcu:
+        what: ceoloide/mcu_nice_nano
+        where:
+        - ref: mirror_matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_mcu_y
+        params:
+          reversible: false
+          reverse_mount: true
+          show_silk_labels: true
+          P4: row_top
+          P5: row_home
+          P6: row_bottom
+          P7: row_thumb
+          P14: col_inner
+          P15: col_index
+          P18: col_middle
+          P19: col_ring
+          P20: col_pinky
+          P21: PMW_MOTION
+          P8: PMW_SDIO
+          P9: PMW_SCLK
+          P10: PMW_CS
+      battery_direct:
+        what: ceoloide/battery_direct_solder_reversible
+        where:
+        - ref: mirror_matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_battery_y
+          rotate: 0
+        params:
+          reversible: false
+          BAT_P: BAT_P
+          BAT_N: GND
+      power:
+        what: ceoloide/power_switch_smd_side
+        where:
+        - ref: mirror_matrix_inner_home
+          shift:
+          - elec_switch_right_x
+          - elec_power_y
+          rotate: 180
+        params:
+          reversible: false
+          from: BAT_P
+          to: RAW
+      reset:
+        what: ceoloide/reset_switch_tht_top
+        where:
+        - ref: mirror_matrix_inner_home
+          shift:
+          - elec_switch_x
+          - elec_reset_y
+          rotate: 90
+        params:
+          reversible: false
+      pmw3610_socket:
+        what: pmw3610_badjeff_socket
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          reversible: false
+          VCC: VCC
+          GND: GND
+          SCLK: PMW_SCLK
+          SDIO: PMW_SDIO
+          CS: PMW_CS
+          MOTION: PMW_MOTION
+          pad_dia: pmw_socket_pad_dia
+          drill: pmw_socket_drill
+          show_outline: true
+          show_route_guides: false
+          include_silkscreen: true
+          include_labels: true
+          include_traces: true
+      trackball_case_mount:
+        what: keyball_trackball_case_34mm
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          designator: TB
+      trackball_cleanout_npth:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          hole_size: tb_cleanout_d
+          hole_drill: tb_cleanout_d
+      tempest_text:
+        what: ceoloide/utility_text
+        where:
+        - ref: mirror_matrix_index_home
+          shift:
+          - 0
+          - -0.5ky + 1.45
+        params:
+          text: TEMPEST_DUX R
+          side: F
+          height: 2
+          width: 2
+          knockout: true
+          reversible: false
+      ver:
+        what: ceoloide/utility_text
+        where:
+        - ref: mirror_matrix_index_home
+          shift:
+          - 0.5kx
+          - -0.5ky + 1.45
+        params:
+          text: v0.7.5
+          side: F
+          reversible: false
+      sam:
+        what: ceoloide/utility_text
+        where:
+        - ref: mirror_thumb_far
+          shift:
+          - 0
+          - -3
+        params:
+          text: by sam
+          side: F
+          reversible: false
+      asm_trackball:
+        what: ceoloide/utility_text
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          text: TRACKBALL RIGHT
+          side: F
+          reversible: false
+          height: 1.2
+          width: 1.2
+      TentingPuck:
+        what: TentingPuck
+        where:
+        - ref: mirror_matrix_middle_home
+          shift:
+          - 0.55 kx
+          - -0.41 ky
+          rotate: -10
       hole_1:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_middle_top
-            shift: [hole1_x, hole1_y]
+        - ref: mirror_matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
       hole_2:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_inner_top
-            shift: [hole2_x, hole2_y]
+        - ref: mirror_matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
       hole_3:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: thumb_mid
-            shift: [hole3_x, hole3_y]
+        - ref: mirror_thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
       hole_4:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_index_bottom
-            shift: [hole4_x, hole4_y]
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
       hole_5:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_ring_home
-            shift: [hole5_x, hole5_y]
-
-  ###### TOPPLATE
-  tempest-top-plate:
+        - ref: mirror_matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
+        params:
+          hole_size: standoff_size
+          hole_drill: standoff_size
+  tempest_dux-top-plate:
     template: kicad8
     outlines:
       main:
@@ -436,25 +1235,449 @@ pcbs:
       hole_1:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_middle_top
-            shift: [hole1_x, hole1_y]
+        - ref: matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
       hole_2:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_inner_top
-            shift: [hole2_x, hole2_y]
+        - ref: matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
       hole_3:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: thumb_mid
-            shift: [hole3_x, hole3_y]
+        - ref: thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
       hole_4:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_index_bottom
-            shift: [hole4_x, hole4_y]
+        - ref: matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
       hole_5:
         what: ceoloide/mounting_hole_npth
         where:
-          - ref: matrix_ring_home
-            shift: [hole5_x, hole5_y]
+        - ref: matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
+  tempest_dux-tpu-gasket:
+    template: kicad8
+    outlines:
+      main:
+        outline: tpu_gasket_outline
+    footprints:
+      hole_1:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
+      hole_2:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
+      hole_3:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
+      hole_4:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
+      hole_5:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
+  tempest_dux-switch-plate:
+    template: kicad8
+    outlines:
+      main:
+        outline: switch_plate
+    footprints:
+      hole_1:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
+      hole_2:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
+      hole_3:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
+      hole_4:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
+      hole_5:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
+  tempest_dux-back-plate:
+    template: kicad8
+    outlines:
+      main:
+        outline: back_plate
+    footprints:
+      hole_1:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
+      hole_2:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
+      hole_3:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
+      hole_4:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
+      hole_5:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
+  tempest_dux-left-bottom-plate:
+    template: kicad8
+    outlines:
+      main:
+        outline: left_bottom_plate_outline
+    footprints:
+      choc_hotswap_cutout:
+        what: choc_hotswap_plate_cutout
+        where: /^(matrix_|thumb_).*/
+        params:
+          designator: HS
+          include_npth: false
+      diode_cutout:
+        what: smd_plate_cutout
+        where: /^(matrix_|thumb_).*/
+        adjust:
+          shift:
+          - 0
+          - -5
+        params:
+          designator: DCUT
+          rects:
+          - - 0
+            - 0
+            - 4.6
+            - 2.0
+      mcu:
+        what: ceoloide/mcu_nice_nano
+        where:
+        - ref: matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_mcu_y
+        params:
+          reversible: false
+          reverse_mount: true
+          show_silk_labels: false
+      display:
+        what: ceoloide/display_nice_view
+        where:
+        - ref: matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_display_y
+          rotate: 0
+        params:
+          reversible: false
+          include_labels: true
+      TentingPuck:
+        what: TentingPuck
+        where:
+        - ref: matrix_middle_home
+          shift:
+          - 0.55 kx
+          - -0.41 ky
+          rotate: -10
+      hole_1:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
+      hole_2:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
+      hole_3:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
+      hole_4:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
+      hole_5:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
+  tempest_dux-right-bottom-plate:
+    template: kicad8
+    outlines:
+      main:
+        outline: right_bottom_plate_outline
+    footprints:
+      choc_hotswap_cutout:
+        what: choc_hotswap_plate_cutout
+        where: /^mirror_(matrix_|thumb_).*/
+        params:
+          designator: HS
+          include_npth: false
+      pmw_socket_cutout:
+        what: smd_plate_cutout
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          designator: PMWCUT
+          rects:
+          - - 0
+            - -15.799
+            - 14.9
+            - 2.2
+      diode_cutout:
+        what: smd_plate_cutout
+        where: /^mirror_(matrix_|thumb_).*/
+        adjust:
+          shift:
+          - 0
+          - -5
+        params:
+          designator: DCUT
+          rects:
+          - - 0
+            - 0
+            - 4.6
+            - 2.0
+      mcu:
+        what: ceoloide/mcu_nice_nano
+        where:
+        - ref: mirror_matrix_inner_home
+          shift:
+          - elec_main_x
+          - elec_mcu_y
+        params:
+          reversible: false
+          reverse_mount: true
+          show_silk_labels: false
+      trackball_cleanout_npth_bottom:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          hole_size: tb_cleanout_d
+          hole_drill: tb_cleanout_d
+      trackball_case_mount:
+        what: keyball_trackball_case_34mm
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - pmw_optical_x
+          - pmw_optical_y
+          rotate: pmw_rotate
+        params:
+          designator: TB
+      TentingPuck:
+        what: TentingPuck
+        where:
+        - ref: mirror_matrix_middle_home
+          shift:
+          - 0.55 kx
+          - -0.41 ky
+          rotate: -10
+      hole_1:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_middle_top
+          shift:
+          - hole1_x
+          - hole1_y
+      hole_2:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_inner_top
+          shift:
+          - hole2_x
+          - hole2_y
+      hole_3:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_thumb_mid
+          shift:
+          - hole3_x
+          - hole3_y
+      hole_4:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_inner_bottom
+          shift:
+          - hole4_x
+          - hole4_y
+      hole_5:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_ring_home
+          shift:
+          - hole5_x
+          - hole5_y
+      hole_6:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_ring_home
+          shift:
+          - hole6_x
+          - hole6_y
+      hole_7:
+        what: ceoloide/mounting_hole_npth
+        where:
+        - ref: mirror_matrix_ring_home
+          shift:
+          - hole7_x
+          - hole7_y
