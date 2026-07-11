@@ -1,2 +1,4 @@
 ergogen/output/
 ergogen/3d/
+# KiCad local state / preferences (machine-local, not design source)
+*.kicad_prl
