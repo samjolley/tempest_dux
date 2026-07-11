@@ -28,3 +28,7 @@ Built on that lineage, my own contribution is:
 ## Build log
 
 I wrote up the design decisions, the failures, and what I would do differently here: <https://samjolley.com/writing/building-the-tempest-dux/>
+
+## License
+
+My original work here (the Ergogen config, the KiCad board, and my custom footprints) is released under the MIT License; see [LICENSE](LICENSE). Bundled third-party components keep their own licenses: the `ceoloide` Ergogen footprints under `ergogen/footprints/ceoloide/` retain the license headers in each file. This design builds on the prior art credited above, which carries its own terms where stated.
